@@ -1,0 +1,48 @@
+languageCode = "en-us"
+ignoreFiles = [ "\\.files/README.md$",  ]
+defaultContentLanguage = "en"
+title = "AWS Fargate Intro Workshop"
+theme = "learn"
+uglyurls = false
+googleAnalytics = ""
+sectionPagesMenu = "main"
+relativeURLs = true
+
+[blackfriday]
+hrefTargetBlank = true
+
+[params]
+editURL = "https://github.com/rnzsgh/fargate-workshop/edit/master/content/"
+themeVariant = "mine"
+showVisitedLinks = false
+author = "Startup Team"
+description = "AWS Fartate Workshop"
+disableSearch = false
+disableAssetsBusting = false
+disableLanguageSwitchingButton = true
+disableShortcutsTitle=false
+disableInlineCopyToClipBoard = true
+ghrepo = "https://github.com/rnzsgh/fargate-workshop/"
+branch = "master"
+template_bucket = "fargate-workshop"
+
+
+
+#
+
+[menu]
+  [[menu.main]]
+    identifier = "Prerequisites"
+    name = "This is the Mu track"
+    title = "Workshop using Mu"
+    url = "/mu/"
+    weight = -110
+
+[[menu.shortcuts]]
+name = "<i class='fab fa-github'></i> GitHub Project"
+url = "https://github.com/rnzsgh/fargate-workshop"
+weight = 30
+
+[outputs]
+home = [ "HTML", "JSON"]
+page = [ "HTML" ]
