@@ -1,4 +1,4 @@
-# Fargate Workshop
+# Fargate Intro Workshop
 
 ### Setup:
 
