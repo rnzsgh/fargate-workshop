@@ -711,3 +711,9 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-target-group-name
 
+  ApplicationLoadBalancerUrl:
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export:
+      Name: !Sub ${AWS::StackName}-alb-dns
+
+
