@@ -677,7 +677,7 @@ Outputs:
       Name: !Sub ${AWS::StackName}-app-sg
 
   CacheEndpoint:
-    Value: !If [ IsRedis, !GetAtt CaccheCluster.RedisEndpoint.Address, !GetAtt CacheCluster.ConfigurationEndpoint.Address ]
+    Value: !If [ IsRedis, !GetAtt CacheCluster.RedisEndpoint.Address, !GetAtt CacheCluster.ConfigurationEndpoint.Address ]
     Export:
       Name: !Sub ${AWS::StackName}-cache-endpoint
 
