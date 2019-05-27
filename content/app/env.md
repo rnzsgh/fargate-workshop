@@ -5,7 +5,7 @@ weight: 10
 ---
 
 Now that we have the base Fargate cluster and related resources deployed, we are going to pull the output from the
-CloudFormation stack output, so that we can configure the Fargate tasks and service.
+CloudFormation stack, so that we can configure the Fargate tasks and service.
 
 
 ```
