@@ -11,4 +11,8 @@ Fargate cluster in a subsequent cleanup step, we need to delete the service.
 ecs-cli compose --project-name $STACK_NAME --cluster-config $STACK_NAME service rm
 ```
 
+{{% notice tip %}}
+If the operation times out, run the command again.
+{{% /notice %}}
+
 
