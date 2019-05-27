@@ -252,7 +252,8 @@ Resources:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: !Sub ${AWS::StackName}-back
-# Buckets --------------------------------------------------------------------
+
+  # Buckets --------------------------------------------------------------------
 
   DataBucket:
     Type: AWS::S3::Bucket
