@@ -35,4 +35,22 @@ The ecs-cli supports the [Docker Compose](https://docs.docker.com/compose/) conf
 compose file if you wanted to run the application locally.
 {{% /notice %}}
 
+Once this command completes, you can see the status of the tasks by issuing:
+
+```
+ecs-cli compose --project-name $STACK_NAME service ps --cluster-config $STACK_NAME
+```
+
+After your containers are running, you can view the sample application by looking up the ALB hostname:
+
+```
+export ALB_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`ApplicationLoadBalancerUrl`].OutputValue' --output text)
+echo "Open $ALB_URL in your browser"
+```
+
+{{% notice info %}}
+It can take a few minutes for the ALB DNS hostname to propagated and the services registered.
+{{% /notice %}}
+
+
 
