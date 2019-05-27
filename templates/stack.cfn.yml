@@ -1,0 +1,712 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Fargate Intro
+
+
+Parameters:
+
+  EnvironmentName:
+    Description: Environment name, either dev or prod
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    ConstraintDescription: Specify either dev or prod
+
+  CertificateArn:
+    Type: String
+    Description: The optional SSL/TLS certificate ARN
+    MinLength: 0
+    MaxLength: 2048
+    Default: ''
+
+  DatabaseSize:
+    Default: 10
+    Type: Number
+    Description: Database storage size in gigabytes (GB)
+    MinValue: 5
+    ConstraintDescription: Enter a size of at least 5 GB
+
+  DatabaseName:
+    Default: workshop
+    Type: String
+    Description: Database name
+    MinLength: 1
+    MaxLength: 30
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: Name must begin with a letter and contain only alphanumeric characters
+
+  DatabaseEngine:
+    Default: postgres
+    Type: String
+    Description: Database engines - PostgreSQL or MySQL
+    ConstraintDescription: Choose an engine from the drop down
+    AllowedValues:
+      - postgres
+      - mysql
+
+  CacheEngine:
+    Default: redis
+    Type: String
+    Description: Cache engines - redis or memcached
+    ConstraintDescription: Choose an engine from the drop down
+    AllowedValues:
+      - redis
+      - memcached
+
+  DatabaseInstanceType:
+    Default: db.t3.micro
+    Type: String
+    Description: Database instance type
+    ConstraintDescription: DB instance type not supported
+    AllowedValues:
+      - db.t3.micro
+      - db.t3.small
+      - db.t3.medium
+      - db.t3.large
+      - db.t3.xlarge
+      - db.t3.2xlarge
+      - db.m5.large
+      - db.m5.xlarge
+      - db.m5.2xlarge
+      - db.m5.4xlarge
+      - db.m5.12xlarge
+      - db.m5.24xlarge
+      - db.r5.large
+      - db.r5.xlarge
+      - db.r5.2xlarge
+      - db.r5.4xlarge
+      - db.r5.12xlarge
+      - db.r5.24xlarge
+
+  CacheInstanceType:
+    Default: cache.t2.micro
+    Type: String
+    Description: Cache instance type
+    ConstraintDescription: Cache instance type not supported
+    AllowedValues:
+      - cache.t2.micro
+      - cache.t2.small
+      - cache.t2.medium
+      - cache.m5.large
+      - cache.m5.xlarge
+      - cache.m5.2xlarge
+      - cache.m5.4xlarge
+      - cache.m5.12xlarge
+      - cache.m5.24xlarge
+      - cache.r5.large
+      - cache.r5.xlarge
+      - cache.r5.2xlarge
+      - cache.r5.4xlarge
+      - cache.r4.12xlarge
+      - cache.r4.24xlarge
+
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Environment
+        Parameters:
+          - EnvironmentName
+      - Label:
+          default: Database
+        Parameters:
+          - DatabaseEngine
+          - DatabaseInstanceType
+          - DatabaseName
+          - DatabaseSize
+      - Label:
+          default: Cache
+        Parameters:
+          - CacheEngine
+          - CacheInstanceType
+      - Label:
+          default: TLS/SSL
+        Parameters:
+          - CertificateArn
+    ParameterLabels:
+      EnvironmentName:
+        default: Name
+      DatabaseEngine:
+        default: Engine
+      DatabaseName:
+        default: Name
+      DatabaseInstanceType:
+        default: Instance
+      CacheInstanceType:
+        default: Instance
+      CacheEngine:
+        default: Engine
+      DatabaseSize:
+        default: Storage
+      CertificateArn:
+        default: Certificate
+
+
+Mappings:
+
+  # Maps CIDR blocks to VPC and various subnets
+  CidrMap:
+    Vpc:
+      Cidr: 10.50.0.0/16
+    Public0:
+      Cidr: 10.50.64.0/18
+    Public1:
+      Cidr: 10.50.128.0/18
+
+
+Conditions:
+
+  IsTlsEnabled: !Not [ !Equals [ !Ref CertificateArn, '' ] ]
+
+  IsRedis: !Equals [ !Ref CacheEngine, redis ]
+
+  IsMemcached: !Equals [ !Ref CacheEngine, memcached ]
+
+  IsProd: !Equals [ !Ref EnvironmentName, prod ]
+
+
+Resources:
+
+  # Fargate --------------------------------------------------------------------
+
+  FargateLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /fargate/${AWS::StackName}
+
+  FargateCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref AWS::StackName
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-fargate-task-role
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: default-s3-bucket
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: s3:*
+                Resource: !GetAtt DataBucket.Arn
+        - PolicyName: get-secret
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:GetSecretValue
+                Condition:
+                  ForAnyValue:StringLike:
+                    secretsmanager:VersionStage: AWSCURRENT
+                Resource: !Ref DatabaseAdminSecret
+
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-fargate-task-exec-role
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  # Docker Registry ------------------------------------------------------------
+
+  EcrDockerRepositoryApi:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${AWS::StackName}-api
+
+  EcrDockerRepositorySchema:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${AWS::StackName}-schema
+
+  EcrDockerRepositoryWeb:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${AWS::StackName}-web
+
+  EcrDockerRepositoryBack:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${AWS::StackName}-back
+# Buckets --------------------------------------------------------------------
+
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub object-${AWS::AccountId}-${AWS::StackName}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  # Load Balancer --------------------------------------------------------------
+
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${AWS::StackName}-lb
+      Subnets:
+        - !Ref PublicSubnet0
+        - !Ref PublicSubnet1
+      SecurityGroups:
+        - !GetAtt AlbSecurityGroup.GroupId
+      Tags:
+      - Key: Stack
+        Value: !Ref AWS::StackName
+      - Key: FargateCluster
+        Value: !Ref FargateCluster
+
+  AlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Certificates:
+        - CertificateArn: !If [ IsTlsEnabled, !Ref CertificateArn, !Ref "AWS::NoValue" ]
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      Port: !If [ IsTlsEnabled, 443, 80 ]
+      Protocol: !If [ IsTlsEnabled, HTTPS, HTTP ]
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${AWS::StackName}-target-group
+      VpcId: !Ref Vpc
+      Port: 8443
+      Protocol: HTTPS
+      Matcher:
+        HttpCode: 200
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTPS
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: 300
+      TargetType: ip
+
+  AlbHttpRedirectToHttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: IsTlsEnabled
+    Properties:
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Host: '#{host}'
+            Path: '/#{path}'
+            Port: 443
+            Protocol: HTTPS
+            Query: '#{query}'
+            StatusCode: HTTP_301
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  # DB -------------------------------------------------------------------------
+
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Ref AWS::StackName
+      DBSubnetGroupDescription: Database subnet group
+      SubnetIds:
+      - !Ref PublicSubnet0
+      - !Ref PublicSubnet1
+      Tags:
+      - Key: Name
+        Value: !Ref AWS::StackName
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Ref AWS::StackName
+      DBName: !Ref DatabaseName
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      VPCSecurityGroups:
+        - !GetAtt DbSecurityGroup.GroupId
+      Engine: !Ref DatabaseEngine
+      MasterUsername: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseAdminSecret, ':SecretString:username}}' ]]
+      MasterUserPassword: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseAdminSecret, ':SecretString:password}}' ]]
+      DBInstanceClass: !Ref DatabaseInstanceType
+      PubliclyAccessible: true # Note - you should change this to false in production
+      AllocatedStorage: !Ref DatabaseSize
+      StorageType: gp2
+      MultiAZ: !If [ IsProd, true, false ]
+      StorageEncrypted: true
+      CopyTagsToSnapshot: true
+      Tags:
+      - Key: Name
+        Value: !Ref AWS::StackName
+
+  DatabaseAdminSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "dbadmin"}'
+        GenerateStringKey: 'password'
+        PasswordLength: 28
+        ExcludeCharacters: '"@/\'
+      Name: !Sub /${AWS::StackName}/database
+
+  # Cache ----------------------------------------------------------------------
+
+  CacheSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-cache-sg
+      GroupDescription: Cache Security Group
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-cache-sg
+
+  CacheSecurityGroupFromAppIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref CacheSecurityGroup
+      IpProtocol: tcp
+      ToPort: !If [ IsRedis, 6379, 11211 ]
+      FromPort: !If [ IsRedis, 6379, 11211 ]
+      SourceSecurityGroupId: !Ref AppSecurityGroup
+
+  CacheSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      CacheSubnetGroupName: !Ref AWS::StackName
+      Description: Cache Subnet Group
+      SubnetIds:
+        - !Ref PublicSubnet0
+        - !Ref PublicSubnet1
+
+  CacheCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      AutoMinorVersionUpgrade: true
+      Engine: !Ref CacheEngine
+      CacheNodeType: !Ref CacheInstanceType
+      ClusterName : !Ref AWS::StackName
+      NumCacheNodes: !If [ IsProd, 2, 1 ]
+      CacheSubnetGroupName: !Ref CacheSubnetGroup
+      VpcSecurityGroupIds:
+        - !GetAtt CacheSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  # VPC ------------------------------------------------------------------------
+
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !FindInMap [ CidrMap, Vpc, Cidr ]
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-vpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-igw
+
+  VpcGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref Vpc
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: Public Subnets
+        - Key: Network
+          Value: Public
+
+  PublicSubnet0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !FindInMap [ CidrMap, Public0, Cidr ]
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs
+          Ref: AWS::Region
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-public-0
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !FindInMap [ CidrMap, Public1, Cidr ]
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs
+          Ref: AWS::Region
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-public-0
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VpcGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-public-igw
+
+  PublicSubnetRouteTableAssociation0:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet0
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-app-sg
+      GroupDescription: Application security group
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+      - SourceSecurityGroupId: !Ref AlbSecurityGroup
+        IpProtocol: tcp
+        ToPort: 8443
+        FromPort: 8443
+      Tags:
+      - Key: Name
+        Value: !Sub ${AWS::StackName}-app-sg
+
+  AppSecurityGroupFromAlbIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref AppSecurityGroup
+      IpProtocol: tcp
+      ToPort: 8443
+      FromPort: 8443
+      SourceSecurityGroupId: !Ref AlbSecurityGroup
+
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-db-sg
+      GroupDescription: Database security group
+      VpcId: !Ref Vpc
+      Tags:
+      - Key: Name
+        Value: !Sub ${AWS::StackName}-db-sg
+
+  DbSecurityGroupFromAppPostgreSqlIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DbSecurityGroup
+      IpProtocol: tcp
+      ToPort: 5432
+      FromPort: 5432
+      SourceSecurityGroupId: !Ref AppSecurityGroup
+
+  DbSecurityGroupFromAppMySqlIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DbSecurityGroup
+      IpProtocol: tcp
+      ToPort: 3306
+      FromPort: 3306
+      SourceSecurityGroupId: !Ref AppSecurityGroup
+
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-alb-sg
+      GroupDescription: Enable HTTP/HTTPs ingress
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: tcp
+        ToPort: 443
+        FromPort: 443
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: tcp
+        ToPort: 80
+        FromPort: 80
+      Tags:
+      - Key: Name
+        Value: !Sub ${AWS::StackName}-alb-sg
+
+
+Outputs:
+
+  Name:
+    Value: !Ref AWS::StackName
+    Export:
+      Name: !Sub ${AWS::StackName}-name
+
+  FargateClusterName:
+    Value: !Ref FargateCluster
+    Export:
+      Name: !Sub ${AWS::StackName}-cluster-name
+
+  FargateClusterArn:
+    Value: !GetAtt FargateCluster.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-cluster-arn
+
+  VpcId:
+    Value: !Ref Vpc
+    Export:
+      Name: !Sub ${AWS::StackName}-vpc-id
+
+  VpcCidr:
+    Description: Vpc cidr block
+    Value: !FindInMap [ CidrMap, Vpc, Cidr ]
+    Export:
+      Name: !Sub ${AWS::StackName}-vpc-cidr
+
+  PublicSubnet0:
+    Value: !Ref PublicSubnet0
+    Export:
+      Name: !Sub ${AWS::StackName}-subnet-0
+
+  PublicSubnet1:
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: !Sub ${AWS::StackName}-subnet-1
+
+  DatabaseEndpoint:
+    Value: !GetAtt Database.Endpoint.Address
+    Export:
+      Name: !Sub ${AWS::StackName}-db-endpoint
+
+  DatabaseAdminSecretArn:
+    Value: !Ref DatabaseAdminSecret
+    Export:
+      Name: !Sub ${AWS::StackName}-db-admin-secret-arn
+
+  DatabaseEngineName:
+    Value: !Ref DatabaseEngine
+    Export:
+      Name: !Sub ${AWS::StackName}-db-engine
+
+  TaskRoleArn:
+    Value: !GetAtt TaskRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-task-role-arn
+
+  TaskRoleName:
+    Value: !Ref TaskRole
+    Export:
+      Name: !Sub ${AWS::StackName}-task-role-name
+
+  TaskExecutionRoleArn:
+    Value: !GetAtt TaskExecutionRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-task-exec-role-arn
+
+  TaskExecutionRoleName:
+    Value: !Ref TaskExecutionRole
+    Export:
+      Name: !Sub ${AWS::StackName}-task-exec-role-name
+
+  AppSecurityGroupId:
+    Value: !Ref AppSecurityGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-app-sg
+
+  RedisCacheEndpoint:
+    Condition: IsRedis
+    Value: !GetAtt CacheCluster.RedisEndpoint.Address
+    Export:
+      Name: !Sub ${AWS::StackName}-cache-endpoint
+
+  MemcachedCacheEndpoint:
+    Condition: IsMemcached
+    Value: !GetAtt CacheCluster.ConfigurationEndpoint.Address
+    Export:
+      Name: !Sub ${AWS::StackName}-cache-endpoint
+
+  EcrDockerRepositoryApiName:
+    Value: !Ref EcrDockerRepositoryApi
+    Export:
+      Name: !Sub ${AWS::StackName}-api-repository
+
+  EcrDockerRepositoryWebName:
+    Value: !Ref EcrDockerRepositoryWeb
+    Export:
+      Name: !Sub ${AWS::StackName}-web-repository
+
+  EcrDockerRepositoryBackName:
+    Value: !Ref EcrDockerRepositoryBack
+    Export:
+      Name: !Sub ${AWS::StackName}-back-repository
+
+  EcrDockerRepositorySchemaName:
+    Value: !Ref EcrDockerRepositorySchema
+    Export:
+      Name: !Sub ${AWS::StackName}-schema-repository
+
+  FargateLogGroupName:
+    Value: !Ref FargateLogGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-log-group
+
+  TargetGroupArn:
+    Value: !Ref TargetGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-target-group-arn
+
+  TargetGroupName:
+    Value: !GetAtt TargetGroup.TargetGroupName
+    Export:
+      Name: !Sub ${AWS::StackName}-target-group-name
+
