@@ -1,0 +1,27 @@
+{
+  "name": "fargate-workshop",
+  "version": "1.0.0",
+  "homepage": "https://github.com/rnzsgh/fargate-workshop#readme",
+  "bugs": {
+    "url": "https://github.com/rnzsgh/fargate-workshop/issues"
+  },
+  "license": "ISC",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rnzsgh/fargate-workshop.git"
+  },
+  "scripts": {
+    "theme": "git submodule init && git submodule update",
+    "drafts": "hugo server -w -v -DF --disableFastRender --enableGitInfo --bind=0.0.0.0",
+    "server": "hugo server -w -v --enableGitInfo --bind=0.0.0.0 --port 8080 --navigateToChanged",
+    "build": "hugo -v"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.8.1",
+    "js-yaml": "^3.13.1",
+    "hugo-cli": "^0.10.0",
+    "hugo-lunr": "0.0.4",
+    "mermaid": "^8.0.0"
+  }
+}
