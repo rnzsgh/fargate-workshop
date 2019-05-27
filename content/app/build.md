@@ -14,27 +14,36 @@ ECR operates like a standard Docker repository, but also supports fine-grained a
 $(aws ecr get-login --no-include-email)
 ```
 
+##### Create a tag
+
+A [Docker tag](https://docs.docker.com/engine/reference/commandline/tag/) represents a specific version of a container image. In this
+workshop, we are going to use a combination of the date and the current Git SHA.
+
+```
+export TAG=$(date +%Y-%m-%d.%H.%M.%S).$(git rev-parse HEAD | head -c 8)
+```
+
 ##### Web Docker Image
 
 ```
 cd ~/environment/fargate-workshop-apps/web
-docker build --tag $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_WEB:latest .
-docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_WEB:latest
+docker build --tag $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_WEB:$TAG .
+docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_WEB:$TAG
 ```
 
 ##### API Docker Image
 
 ```
 cd ~/environment/fargate-workshop-apps/api
-docker build --tag $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_API:latest .
-docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_API:latest
+docker build --tag $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_API:$TAG .
+docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_API:$TAG
 ```
 
 ##### API Back-end Image
 
 ```
 cd ~/environment/fargate-workshop-apps/back
-docker build --tag $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_BACK:latest .
-docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_BACK:latest
+docker build --tag $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_BACK:$TAG .
+docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_BACK:$TAG
 ```
 
