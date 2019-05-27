@@ -44,6 +44,8 @@ export DB_ENGINE=$(aws cloudformation describe-stacks --stack-name $STACK_NAME -
 
 export DB_ENDPOINT=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`DatabaseEndpoint`].OutputValue' --output text)
 
+export DB_NAME=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`DbName`].OutputValue' --output text)
+
 export CACHE_ENGINE=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`CacheEngine`].OutputValue' --output text)
 
 export CACHE_ENDPOINT=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`CacheEndpoint`].OutputValue' --output text)
