@@ -3,9 +3,6 @@ AWSTemplateFormatVersion: 2010-09-09
 
 Description: Fargate Intro
 
-arn:aws:secretsmanager:us-east-1:702786411213:secret:/workshop/database-cFZhCE
-arn:aws:secretsmanager:us-east-1:702786411213:secret:/workshop/database-cFZhCE
-
 
 Parameters:
 
@@ -644,6 +641,11 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-db-engine
 
+  CacheEngineName:
+    Value: !Ref CacheEngine
+    Export:
+      Name: !Sub ${AWS::StackName}-cache-engine
+
   TaskRoleArn:
     Value: !GetAtt TaskRole.Arn
     Export:
@@ -669,15 +671,8 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-app-sg
 
-  RedisCacheEndpoint:
-    Condition: IsRedis
-    Value: !GetAtt CacheCluster.RedisEndpoint.Address
-    Export:
-      Name: !Sub ${AWS::StackName}-cache-endpoint
-
-  MemcachedCacheEndpoint:
-    Condition: IsMemcached
-    Value: !GetAtt CacheCluster.ConfigurationEndpoint.Address
+  CacheEndpoint:
+    Value: !If [ IsRedis, !GetAtt CaccheCluster.RedisEndpoint.Address, !GetAtt CacheCluster.ConfigurationEndpoint.Address ]
     Export:
       Name: !Sub ${AWS::StackName}-cache-endpoint
 
