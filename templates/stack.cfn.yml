@@ -3,6 +3,9 @@ AWSTemplateFormatVersion: 2010-09-09
 
 Description: Fargate Intro
 
+arn:aws:secretsmanager:us-east-1:702786411213:secret:/workshop/database-cFZhCE
+arn:aws:secretsmanager:us-east-1:702786411213:secret:/workshop/database-cFZhCE
+
 
 Parameters:
 
@@ -211,9 +214,6 @@ Resources:
                 Action:
                   - secretsmanager:DescribeSecret
                   - secretsmanager:GetSecretValue
-                Condition:
-                  ForAnyValue:StringLike:
-                    secretsmanager:VersionStage: AWSCURRENT
                 Resource: !Ref DatabaseAdminSecret
 
   TaskExecutionRole:
@@ -239,9 +239,6 @@ Resources:
                 Action:
                   - secretsmanager:DescribeSecret
                   - secretsmanager:GetSecretValue
-                Condition:
-                  ForAnyValue:StringLike:
-                    secretsmanager:VersionStage: AWSCURRENT
                 Resource: !Ref DatabaseAdminSecret
 
   # Docker Registry ------------------------------------------------------------
