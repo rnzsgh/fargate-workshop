@@ -37,6 +37,6 @@ Your output should resemble:
 
 #### Install CLI utilities
 ```
-sudo yum -y install jq gettext
+sudo yum -y install jq
 ```
 
