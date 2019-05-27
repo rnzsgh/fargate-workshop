@@ -230,6 +230,19 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: get-secret
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:GetSecretValue
+                Condition:
+                  ForAnyValue:StringLike:
+                    secretsmanager:VersionStage: AWSCURRENT
+                Resource: !Ref DatabaseAdminSecret
 
   # Docker Registry ------------------------------------------------------------
 
@@ -237,11 +250,6 @@ Resources:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: !Sub ${AWS::StackName}-api
-
-  EcrDockerRepositorySchema:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: !Sub ${AWS::StackName}-schema
 
   EcrDockerRepositoryWeb:
     Type: AWS::ECR::Repository
@@ -690,11 +698,6 @@ Outputs:
     Value: !Ref EcrDockerRepositoryBack
     Export:
       Name: !Sub ${AWS::StackName}-back-repository
-
-  EcrDockerRepositorySchemaName:
-    Value: !Ref EcrDockerRepositorySchema
-    Export:
-      Name: !Sub ${AWS::StackName}-schema-repository
 
   FargateLogGroupName:
     Value: !Ref FargateLogGroup
