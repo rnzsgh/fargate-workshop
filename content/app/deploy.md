@@ -18,19 +18,6 @@ The ecs-cli stores the configuration data in ~/.ecs/config. Using this simply al
 when we use the tool.
 {{% /notice %}}
 
-Next we are going to replace placeholders in the template files (docker-compose.yml.template and ecs-params.yml.template).
-
-```
-cd ~/environment/fargate-workshop-apps
-envsubst < ecs-params.yml.template > ecs-params.yml
-envsubst < docker-compose.yml.template > docker-compose.yml
-```
-
-{{% notice tip %}}
-The ecs-cli supports the [Docker Compose](https://docs.docker.com/compose/) configuration file, so you could create a similar
-compose file if you wanted to run the application locally.
-{{% /notice %}}
-
 In this section, we are going to deploy the application using the ecs-cli:
 
 ```
@@ -42,3 +29,10 @@ ecs-cli compose --project-name $STACK_NAME service up \
   --cluster-config $STACK_NAME \
   --vpc $VPC_ID
 ```
+
+{{% notice tip %}}
+The ecs-cli supports the [Docker Compose](https://docs.docker.com/compose/) configuration file, so you could create a similar
+compose file if you wanted to run the application locally.
+{{% /notice %}}
+
+
