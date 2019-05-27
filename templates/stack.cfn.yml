@@ -641,6 +641,11 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-db-engine
 
+  DbName:
+    Value: !Ref DatabaseName
+    Export:
+      Name: !Sub ${AWS::StackName}-db-name
+
   CacheEngineName:
     Value: !Ref CacheEngine
     Export:
