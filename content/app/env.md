@@ -39,6 +39,14 @@ export REPO_BACK=$(aws cloudformation describe-stacks --stack-name $STACK_NAME -
 export REPO_API=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`EcrDockerRepositoryApiName`].OutputValue' --output text)
 
 export DB_ADMIN_ARN=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`DatabaseAdminSecretArn`].OutputValue' --output text)
+
+export DB_ENGINE=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`DatabaseEngineName`].OutputValue' --output text)
+
+export DB_ENDPOINT=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`DatabaseEndpoint`].OutputValue' --output text)
+
+export CACHE_ENGINE=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`CacheEngine`].OutputValue' --output text)
+
+export CACHE_ENDPOINT=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`CacheEndpoint`].OutputValue' --output text)
 ```
 
 {{% notice tip %}}
