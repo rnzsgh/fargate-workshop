@@ -30,6 +30,12 @@ ecs-cli compose --project-name $STACK_NAME service up \
   --vpc $VPC_ID
 ```
 
+
+{{% notice info %}}
+If you want to release a new build, simply repeat the steps in [build](/app/build/) and run the ecs-cli compose service up command again. This will drain your existing containers and deploy the latest build.
+{{% /notice %}}
+
+
 {{% notice tip %}}
 The ecs-cli supports the [Docker Compose](https://docs.docker.com/compose/) configuration file, so you could create a similar
 compose file if you wanted to run the application locally.
