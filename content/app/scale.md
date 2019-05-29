@@ -4,7 +4,7 @@ date: 2018-08-07T12:37:34-07:00
 weight: 13
 ---
 
-At this point, our cluster and service are up and running. Out application turned out to be incredibly popular
+At this point, our cluster and service are up and running. Our application turned out to be incredibly popular
 and we need to scale the number of containers we are running in the cluster.
 
 We are going to going to use the ecs-cli to accomplish the scaling:
