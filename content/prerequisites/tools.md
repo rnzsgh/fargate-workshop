@@ -10,7 +10,7 @@ For this workshop, we are also going to use the [Amazon ECS CLI](https://docs.aw
 
 {{% notice tip %}}
 In this workshop we will give you the commands to download the Linux
-binaries. If you are running Mac OSX / Windows, please [see the official docs
+binaries. If you are running macOS / Windows, please [see the official docs
 for the download links.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html)
 {{% /notice %}}
 
