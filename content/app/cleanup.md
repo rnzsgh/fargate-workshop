@@ -1,7 +1,7 @@
 ---
 title: "Cleanup"
 date: 2018-08-07T12:37:34-07:00
-weight: 14
+weight: 15
 ---
 
 If you want to keep your application running, you can do so, but this is the end of the workshop. In order to tear down the
