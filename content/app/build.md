@@ -20,8 +20,14 @@ A [Docker tag](https://docs.docker.com/engine/reference/commandline/tag/) repres
 workshop, we are going to use a combination of the date and the current Git SHA.
 
 ```
-cd ~/environment/fargate-workshop-app
+cd ~/environment/fargate-workshop-apps
 export TAG=$(date +%Y-%m-%d.%H.%M.%S).$(git rev-parse HEAD | head -c 8)
+```
+
+##### Set the environment variables
+
+```
+export $(grep -v '^#' ~/environment/fargate-workshop-apps/.env | xargs)
 ```
 
 ##### Web Docker Image
