@@ -5,14 +5,16 @@ weight: 1
 ---
 
 {{% notice warning %}}
-Your account must have the ability to create new IAM roles and scope other IAM permissions.
+Your account must have the ability to create new IAM roles and scope other IAM permissions. For new accounts,
+this is not an issue. Primarily, for security reasons corporate/work accounts may have restrictions related
+to IAM attached to an account.
 {{% /notice %}}
 
 1. If you don't already have an AWS account with Administrator access: [create
 one now by clicking here](https://aws.amazon.com/getting-started/)
 
-1. Once you have an AWS account, ensure you are following the remaining workshop steps
-as an IAM user with administrator access to the AWS account:
+1. After you have created an AWS account, follow the steps below to create an IAM user with administrative access
+to this account.
 [Create a new IAM user to use for the workshop](https://console.aws.amazon.com/iam/home?#/users$new)
 
 1. Enter the user details:
