@@ -24,7 +24,8 @@ The output should not resemble:
 
 ![scale out](/images/app/scale-ecs-cli-ps.png)
 
-You can see that we now have six containers running, two of each (web, api and back)
+You can see that we now have six containers running. We have three containers in each service (web, api and back), and we
+scaled the service to two.
 
 {{% notice tip %}}
 The Amazon ECS section of the [AWS Management Console](https://console.aws.amazon.com/ecs/home) provides a lot of useful information about out cluster.

@@ -50,12 +50,11 @@ services:
       DB_ENDPOINT: ${DB_ENDPOINT}
 ```
 
-In this file, you may notice the variables stored in the ${SOMETHING} construct. Docker Compose and the ecs-cli support environment
+In this file, you may notice the variables stored using the ${ENVIRONMENT} construct. Docker Compose and the ecs-cli support environment
 variable replacement. This is helpful so that we do not need to hard code values that may change in the file. Each Docker
-Compose file is translated into a [task](/introduction/task). Tasks are deployed to the same compute, so they can communicate
-with each other via [localhost](https://en.wikipedia.org/wiki/Localhost).
-
-In this example, you can see that we are deploying three container images (web, api and back).
+Compose file is translated into a [task](/introduction/task). Tasks with multiple containers are deployed to the same compute,
+so they can communicate with each other via [localhost](https://en.wikipedia.org/wiki/Localhost). In this example, you can see that
+we are deploying three container images (web, api and back).
 
 In addition to the docker-compose.yml file, the ecs-cli supports additional ECS Parameters, generally defined in the [ecs-params.yml](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cmd-ecs-cli-compose-ecsparams.html) file, which enables additional configuration options for Fargate. Below is the ~/environment/fargate-workshop-apps/ecs-params.yml file used in this workshop:
 
@@ -93,7 +92,13 @@ run_params:
 Like the Docker Compose file, the ECS Parameters file also supports ${ENVIRONMENT} variables. In addtion to task level
 resource attributes, it supports container level attributes. In the file above, you can see that we are passing in a
 value from [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/) to the "back" container. This is helpful because passing standard
-environment variables to Docker containers is typically insecure.
+environment variables to Docker containers is insecure.
+
+
+{{% notice info %}}
+In this example, we configured 256 CPU units and 512 memory units. This equates to 1/4 of a vCPU (1024 is a whole) and 512MB of memory. 
+See the [Fargate pricing](https://aws.amazon.com/fargate/pricing/) page for more information on the supported configurations.
+{{% /notice %}}
 
 
 
