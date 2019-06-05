@@ -1,7 +1,7 @@
 ---
 title: "Scale"
 date: 2018-08-07T12:37:34-07:00
-weight: 13
+weight: 14
 ---
 
 At this point, our cluster and service are up and running. Our application turned out to be incredibly popular
