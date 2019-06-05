@@ -30,6 +30,12 @@ ecs-cli compose --project-name $STACK_NAME service up \
   --vpc $VPC_ID
 ```
 
+If your Cloud9 instance stops, you will need to run the following command to set the environment variables again:
+
+```
+export $(grep -v '^#' ~/environment/fargate-workshop-apps/.env | xargs)
+```
+
 
 {{% notice info %}}
 If you want to release a new build, simply repeat the steps in [build](/app/build/) and run the ecs-cli compose service up command again. This will drain your existing containers and deploy the latest build.
@@ -46,6 +52,12 @@ Once this command completes, you can see the status of the tasks by issuing:
 ```
 ecs-cli compose --project-name $STACK_NAME service ps --cluster-config $STACK_NAME
 ```
+
+The output of the command should resemble:
+
+![ecs-cli ps](/images/deploy/ecs-cli-ps.png)
+
+In this example, you can see that you have three running containers, the web/nginx, api and back.
 
 After your containers are running, you can view the sample application by looking up the ALB hostname:
 
