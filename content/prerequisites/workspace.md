@@ -36,7 +36,7 @@ Cloud9 requires third-party-cookies. You can whitelist the [specific domains](ht
 {{< /tabs >}}
 
 - Select **Create environment**
-- Name it **workshop**, and take all other defaults
+- Name it **workshop**, and keep all other defaults
 
 When the Cloud9 environment comes up, customize the environment by closing the **welcome tab**
 and **lower work area**, and open a new **terminal** tab in the main work area:
