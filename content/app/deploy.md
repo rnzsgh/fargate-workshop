@@ -1,7 +1,7 @@
 ---
 title: "Deploy"
 date: 2018-08-07T12:37:34-07:00
-weight: 12
+weight: 13
 ---
 
 Now that we have built and pushed our application Docker images to ECR, we are going to use the ecs-cli command to deploy
