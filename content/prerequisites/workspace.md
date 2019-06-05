@@ -20,7 +20,7 @@ and this message will be removed.
 
 {{% notice tip %}}
 Ad blockers, javascript disablers, and tracking blockers should be disabled for
-the cloud9 domain, or connecting to the workspace might be impacted.
+the \*.amazonaws.com domain(s), or connecting to the workspace might be impacted.
 Cloud9 requires third-party-cookies. You can whitelist the [specific domains](https://docs.aws.amazon.com/cloud9/latest/user-guide/troubleshooting.html#troubleshooting-env-loading).
 {{% /notice %}}
 
@@ -39,7 +39,7 @@ Cloud9 requires third-party-cookies. You can whitelist the [specific domains](ht
 - Name it **workshop**, and take all other defaults
 
 When the Cloud9 environment comes up, customize the environment by closing the **welcome tab**
-and **lower work area**, and opening a new **terminal** tab in the main work area:
+and **lower work area**, and open a new **terminal** tab in the main work area:
 
 ![c9before](/images/prerequisites/c9before.png)
 
