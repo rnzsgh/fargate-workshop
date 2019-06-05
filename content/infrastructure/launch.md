@@ -8,7 +8,7 @@ Now we are going to create a new VPC, Fargate cluster, Application Load Balancer
 CloudFormation template.
 
 
-Click the "Launch" button below to begin.
+Click the "Launch" button below to begin (takes ~ ten minutes to run):
 
 | Launch template |  |  |
 | ------ |:------:|:--------:|
