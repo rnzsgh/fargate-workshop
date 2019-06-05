@@ -20,6 +20,12 @@ If you run the **service ps** command again, you will see that we now have six c
 ecs-cli compose --project-name $STACK_NAME service ps --cluster-config $STACK_NAME
 ```
 
+The output should not resemble:
+
+![scale out](/images/app/scale-ecs-cli-ps.png)
+
+You can see that we now have six containers running, two of each (web, api and back)
+
 {{% notice tip %}}
 The Amazon ECS section of the [AWS Management Console](https://console.aws.amazon.com/ecs/home) provides a lot of useful information about out cluster.
 {{% /notice %}}
